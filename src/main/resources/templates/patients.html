@@ -8,7 +8,7 @@
 <body>
 <div class="container">
     <nav class="navbar navbar-expand-sm navbar-dark bg-secondary">
-        <a class="navbar-brand" href="index.html">MediLabo Solutions</a>
+        <a class="navbar-brand" th:href="@{/}">MediLabo Solutions</a>
         <button class="navbar-toggler" type="button" data-toggle="collapse"
                 data-target="#navbarSupportedContent"
                 aria-controls="navbarSupportedContent" aria-expanded="false"
@@ -17,14 +17,14 @@
             <span class="navbar-toggler-icon"></span>
         </button>
 
-        <div class="collapse navbar-collapse" id="navbarSupportedContent">
-            <ul class="navbar-nav mr-auto">
-                <li class="nav-item">
-                    <a class="nav-link" th:href="patients.html">Home</a>
-                </li>
-            </ul>
+<!--        <div class="collapse navbar-collapse" id="navbarSupportedContent">-->
+<!--&lt;!&ndash;            <ul class="navbar-nav mr-auto">&ndash;&gt;-->
+<!--&lt;!&ndash;                <li class="nav-item">&ndash;&gt;-->
+<!--&lt;!&ndash;                    <a class="nav-link" th:href="@{/patients}">Patients</a>&ndash;&gt;-->
+<!--&lt;!&ndash;                </li>&ndash;&gt;-->
+<!--&lt;!&ndash;            </ul>&ndash;&gt;-->
 
-        </div>
+<!--        </div>-->
     </nav>
     <h2 class="mt-4">All Patients</h2>
     <table class="table">
