@@ -1,11 +1,12 @@
 package com.abernathyclinic.medilabo_frontend.controller;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.ui.Model;
 import com.abernathyclinic.medilabo_frontend.model.Patient;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Arrays;
@@ -13,23 +14,55 @@ import java.util.Collections;
 
 @Slf4j
 @Controller
+@RequestMapping("/ui")
 public class HomeController {
 
     @Autowired
     private RestTemplate restTemplate;
 
-    @GetMapping("/patients")
-    public String getPatients(Model model) {
-        String url = "http://localhost:8085/api/patient/all";//gateway
+    private final String baseUrl = "http://localhost:8085/api/patient";
+
+    @GetMapping("/add")
+    public String showAddForm(Model model) {
+        model.addAttribute("patient", new Patient());
         try {
-            Patient[] patients = restTemplate.getForObject(url, Patient[].class);
-            model.addAttribute("patients", Arrays.asList(patients));
+            ResponseEntity<Patient[]> response = restTemplate.getForEntity(baseUrl + "/all", Patient[].class);
+            model.addAttribute("patients", Arrays.asList(response.getBody()));
         } catch (Exception e) {
-            log.error("Error fetching patients: {}", e.getMessage());
             model.addAttribute("patients", Collections.emptyList());
-            model.addAttribute("error", "Unable to fetch patient data.");
+            model.addAttribute("error", "Unable to fetch patient list.");
         }
-        return "patients";
+        return "add";
+    }
+
+    @GetMapping("/ui/add")
+    public String listPatients(Model model) {
+        ResponseEntity<Patient[]> response = restTemplate.getForEntity(baseUrl + "/all", Patient[].class);
+        model.addAttribute("patients", Arrays.asList(response.getBody()));
+        return "add";
+    }
+
+    @PostMapping("/add")
+    public String addPatient(@ModelAttribute Patient patient, Model model) {
+        try {
+            restTemplate.postForEntity(baseUrl, patient, String.class);
+        } catch (Exception e) {
+            model.addAttribute("error", "Failed to add patient.");
+            return "add";
+        }
+        return "redirect:/ui";
+    }
+
+    @GetMapping("/edit/{id}")
+    public String showEditForm(@PathVariable Integer id, Model model) {
+        Patient patient = restTemplate.getForObject(baseUrl + "/" + id, Patient.class);
+        model.addAttribute("patient", patient);
+        return "edit";
+    }
+
+    @PostMapping("/edit/{id}")
+    public String updatePatient(@PathVariable Integer id, @ModelAttribute Patient patient) {
+        restTemplate.put(baseUrl + "/" + id, patient);
+        return "redirect:/ui";
     }
 }
-

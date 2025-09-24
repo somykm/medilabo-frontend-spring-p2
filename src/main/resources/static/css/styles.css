@@ -1,6 +1,12 @@
 
-.nav{
-background-color:#202020;
+nav{
+background-color:#9EDBF3;
+width:auto;
+padding:20px;
+}
+a.navbar-brand{
+display:flex;
+text-decoration:none
 }
 body{
 background-color:#E6F6FB;
@@ -8,16 +14,44 @@ background-color:#E6F6FB;
 title{
 text-decoration:none;
 }
-
-table{
+table,thead,tbody{
 outline-style:solid;
 outline-color:black;
 outline-width:3px;
-display:flex;
+//display:flex;
+align-items:start;
+justify-content:center;
 flex-direction:row;
 flex-wrap:wrap;
+margin:auto;
+ border-collapse: collapse;
+ width: 100%;
+ margin-top: 2em;
 }
 #text-left{
 front-weight:700px:
 }
 
+th,td{
+border:1px solid, black;
+border: 1px solid #ccc;
+padding: 0.5em;
+text-align: left;
+}
+th{
+background-color: #f2f2f2;
+}
+input {
+      margin: 0.5em 0;
+      padding: 0.5em;
+      width: 300px;
+      display: block;
+    }
+
+button {
+      padding: 0.5em 1em;
+      background-color: #0077cc;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }

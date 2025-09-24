@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Add Patient</title>
+</head>
+<body>
+<h1>Add New Patient</h1>
+<form th:action="@{/ui/add}" th:object="${patient}" method="post">
+    <div class="form-group row">
+        <input th:field="*{lastName}" class="form-control" placeholder="Last Name" required>
+        <input th:field="*{firstName}" class="form-control" placeholder="First Name" required>
+        <input th:field="*{birthdate}" class="form-control" required>
+        <input th:field="*{gender}" class="form-control" placeholder="Gender">
+        <input th:field="*{address}" class="form-control" placeholder="Address" required>
+        <input th:field="*{phone}" class="form-control" placeholder="Phone" required>
+    </div>
+    <button type="submit" class="btn btn-primary mt-3">Add Patient</button>
+</form>
+<h2>Existing Patients</h2>
+<table>
+    <thead>
+    <tr>
+        <th class="text-left">Last Name</th>
+        <th class="text-left">First Name</th>
+        <th class="text-left">Date of Birth</th>
+        <th class="text-left">Gender</th>
+        <th class="text-left">Address</th>
+        <th class="text-left">Phone</th>
+        <th>Edit</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="p : ${patients}">
+        <td th:text="${p.lastName}">Last</td>
+        <td th:text="${p.firstName}">First</td>
+        <td th:text="${p.birthdate}">DOB</td>
+        <td th:text="${p.gender}">Gender</td>
+        <td th:text="${p.address}">Address</td>
+        <td th:text="${p.phone}">Phone</td>
+        <td><a th:href="@{'/ui/edit/' + ${p.id}}">Edit</a></td>
+    </tr>
+    <tr th:if="${#lists.isEmpty(patients)}">
+        <td colspan="7">No patients found.</td>
+    </tr>
+
+    </tbody>
+</table>
+</body>
+</html>
