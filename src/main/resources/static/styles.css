@@ -55,3 +55,6 @@ button {
       border: none;
       cursor: pointer;
     }
+body.form-control{
+background-color:blue;
+}

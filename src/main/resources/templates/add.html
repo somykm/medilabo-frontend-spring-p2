@@ -3,19 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <title>Add Patient</title>
+    <link rel="stylesheet" th:href="@{/styles.css}" />
 </head>
 <body>
 <h1>Add New Patient</h1>
-<form th:action="@{/ui/add}" th:object="${patient}" method="post">
+<form th:action="@{/ui/add}" method="post" th:object="${patient}">
     <div class="form-group row">
-        <input th:field="*{lastName}" class="form-control" placeholder="Last Name" required>
-        <input th:field="*{firstName}" class="form-control" placeholder="First Name" required>
-        <input th:field="*{birthdate}" class="form-control" required>
-        <input th:field="*{gender}" class="form-control" placeholder="Gender">
-        <input th:field="*{address}" class="form-control" placeholder="Address" required>
-        <input th:field="*{phone}" class="form-control" placeholder="Phone" required>
+        <input type="text" th:field="*{lastName}" class="form-control" placeholder="Last Name" required />
+        <input type="text" th:field="*{firstName}" class="form-control" placeholder="First Name" required />
+        <input type="text" th:field="*{birthdate}" class="form-control" required />
+        <input type="text" th:field="*{gender}" class="form-control" placeholder="Gender" />
+        <input type="text" th:field="*{address}" class="form-control" placeholder="Address" required />
+        <input type="text" th:field="*{phone}" class="form-control" placeholder="Phone" required />
     </div>
-    <button type="submit" class="btn btn-primary mt-3">Add Patient</button>
+    <button type="submit" class="btn btn-primary mt-3">Save Patient</button>
 </form>
 <h2>Existing Patients</h2>
 <table>
@@ -46,5 +47,6 @@
 
     </tbody>
 </table>
+<a th:href="@{/}">Back to Homepage!</a>
 </body>
 </html>

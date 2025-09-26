@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width = device-width, initial-scale = 1, shrink-to-fit = no">
     <title>MediLabo Solutions</title>
+    <link rel="stylesheet" th:href="@{/styles.css}"/>
 </head>
 <body>
 <h1>Patient Directory</h1>
-<a th:href="@{/ui/add}">Add New Patient</a>
 <table>
     <thead>
     <tr>
@@ -29,10 +29,12 @@
         <td th:text="${patient.address}"></td>
         <td th:text="${patient.phone}"></td>
         <td>
-            <a th:href="@{'/ui/edit/' + ${patient.id}}">Edit</a>
+            <a th:href="@{/ui/edit/{id}( id=${patient.id})}">Edit</a>
         </td>
     </tr>
     </tbody>
 </table>
+<a th:href="@{/ui/add}">Add New Patient</a>
+
 </body>
 </html>

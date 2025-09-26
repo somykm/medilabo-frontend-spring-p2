@@ -11,6 +11,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 @Slf4j
 @Controller
@@ -21,6 +22,15 @@ public class HomeController {
     private RestTemplate restTemplate;
 
     private final String baseUrl = "http://localhost:8085/api/patient";
+
+    @GetMapping("/")
+    public String listPatients(Model model) {
+        Patient[] response = restTemplate.getForObject(baseUrl, Patient[].class);
+        assert response != null;
+        List<Patient> patientList = Arrays.asList(response);
+        model.addAttribute("patients", patientList);
+        return "index";
+    }
 
     @GetMapping("/add")
     public String showAddForm(Model model) {
@@ -35,22 +45,16 @@ public class HomeController {
         return "add";
     }
 
-    @GetMapping("/ui/add")
-    public String listPatients(Model model) {
-        ResponseEntity<Patient[]> response = restTemplate.getForEntity(baseUrl + "/all", Patient[].class);
-        model.addAttribute("patients", Arrays.asList(response.getBody()));
-        return "add";
-    }
-
     @PostMapping("/add")
     public String addPatient(@ModelAttribute Patient patient, Model model) {
         try {
-            restTemplate.postForEntity(baseUrl, patient, String.class);
+            restTemplate.postForEntity(baseUrl, patient, Patient.class);
         } catch (Exception e) {
+            log.error("No patients found!", e);
             model.addAttribute("error", "Failed to add patient.");
             return "add";
         }
-        return "redirect:/ui";
+        return "redirect:/ui/";
     }
 
     @GetMapping("/edit/{id}")
@@ -60,9 +64,9 @@ public class HomeController {
         return "edit";
     }
 
-    @PostMapping("/edit/{id}")
+    @PostMapping("/ui/update/{id}")
     public String updatePatient(@PathVariable Integer id, @ModelAttribute Patient patient) {
         restTemplate.put(baseUrl + "/" + id, patient);
-        return "redirect:/ui";
+        return "redirect:/";
     }
 }
