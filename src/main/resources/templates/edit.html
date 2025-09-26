@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <title>Edit Patient</title>
-    <link rel="stylesheet" th:href="@{/static/styles.css}" />
+    <link rel="stylesheet" th:href="@{/styles.css}"/>
 </head>
 <body>
 <h1>Edit Patient</h1>
-<form th:action="@{'/ui/update/{id}(id=${patient.id})}" method="post" th:object="${patient}">
-    <input th:field="*{lastName}" required />
+<form th:action="@{/ui/update/{id}(id=${patient.id})}" method="post" th:object="${patient}">
+    <input th:field="*{lastName}" required/>
     <input th:field="*{firstName}" required>
     <input th:field="*{birthdate}" type="date" required>
     <input th:field="*{gender}" required>

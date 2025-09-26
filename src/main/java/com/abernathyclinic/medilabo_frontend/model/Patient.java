@@ -10,7 +10,7 @@ public class Patient {
     private String firstName;
     private String lastName;
     private LocalDate birthdate;
-    private Character gender;
+    private String gender;
     private String address;
     private String phone;
 

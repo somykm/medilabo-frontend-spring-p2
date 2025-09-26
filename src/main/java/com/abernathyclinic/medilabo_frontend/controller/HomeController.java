@@ -1,5 +1,6 @@
 package com.abernathyclinic.medilabo_frontend.controller;
 
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.ui.Model;
 import com.abernathyclinic.medilabo_frontend.model.Patient;
@@ -9,6 +10,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -21,12 +23,12 @@ public class HomeController {
     @Autowired
     private RestTemplate restTemplate;
 
-    private final String baseUrl = "http://localhost:8085/api/patient";
+    private final String baseUrl = "http://localhost:8081/api/patient";
 
     @GetMapping("/")
     public String listPatients(Model model) {
-        Patient[] response = restTemplate.getForObject(baseUrl, Patient[].class);
-        assert response != null;
+        log.info("Fetching patient list for homepage");
+        Patient[] response = restTemplate.getForObject(baseUrl + "/all", Patient[].class);
         List<Patient> patientList = Arrays.asList(response);
         model.addAttribute("patients", patientList);
         return "index";
@@ -47,6 +49,7 @@ public class HomeController {
 
     @PostMapping("/add")
     public String addPatient(@ModelAttribute Patient patient, Model model) {
+        log.info("Patient added: {}", patient);
         try {
             restTemplate.postForEntity(baseUrl, patient, Patient.class);
         } catch (Exception e) {
@@ -54,7 +57,7 @@ public class HomeController {
             model.addAttribute("error", "Failed to add patient.");
             return "add";
         }
-        return "redirect:/ui/";
+        return "redirect:/ui/add";
     }
 
     @GetMapping("/edit/{id}")
@@ -64,9 +67,9 @@ public class HomeController {
         return "edit";
     }
 
-    @PostMapping("/ui/update/{id}")
+    @PostMapping("/update/{id}")
     public String updatePatient(@PathVariable Integer id, @ModelAttribute Patient patient) {
         restTemplate.put(baseUrl + "/" + id, patient);
-        return "redirect:/";
+        return "redirect:/ui/add";
     }
 }
