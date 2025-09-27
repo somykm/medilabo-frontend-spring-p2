@@ -8,32 +8,7 @@
 </head>
 <body>
 <h1>Patient Directory</h1>
-<!--<table>-->
-<!--    <thead>-->
-<!--    <tr>-->
-<!--        <th>Last Name</th>-->
-<!--        <th>First Name</th>-->
-<!--        <th>DOB</th>-->
-<!--        <th>Gender</th>-->
-<!--        <th>Address</th>-->
-<!--        <th>Phone</th>-->
-<!--        <th>Actions</th>-->
-<!--    </tr>-->
-<!--    </thead>-->
-<!--    <tbody>-->
-<!--    <tr th:each="patient : ${patients}">-->
-<!--        <td th:text="${patient.lastName}"> Last Name</td>-->
-<!--        <td th:text="${patient.firstName}">First name</td>-->
-<!--        <td th:text="${patient.birthdate}">Birthday</td>-->
-<!--        <td th:text="${patient.gender}">Gender</td>-->
-<!--        <td th:text="${patient.address}">Address</td>-->
-<!--        <td th:text="${patient.phone}">Phone</td>-->
-<!--        <td>-->
-<!--            <a th:href="@{/ui/edit/{id}( id=${patient.id})}">Edit</a>-->
-<!--        </td>-->
-<!--    </tr>-->
-<!--    </tbody>-->
-<!--</table>-->
+
 <a th:href="@{/ui/add}" class="btn btn-primary mt-3">Add New Patient</a>
 
 </body>
