@@ -1,45 +1,46 @@
 
 nav{
-background-color:#9EDBF3;
-width:auto;
-padding:20px;
+    background-color:#9EDBF3;
+    width:auto;
+    padding:20px;
 }
 a.navbar-brand{
-display:flex;
-text-decoration:none
+    display:flex;
+    text-decoration:none
 }
 body{
-background-color:#E6F6FB;
+    background-color:#E6F6FB;
+    margin-bottom: 100px;
 }
 title{
-text-decoration:none;
+    text-decoration:none;
 }
 table,thead,tbody{
-outline-style:solid;
-outline-color:black;
-outline-width:3px;
-//display:flex;
-align-items:start;
-justify-content:center;
-flex-direction:row;
-flex-wrap:wrap;
-margin:auto;
- border-collapse: collapse;
- width: 100%;
- margin-top: 2em;
+    outline-style:solid;
+    outline-color:black;
+    outline-width:3px;
+    //display:flex;
+    align-items:start;
+    justify-content:center;
+    flex-direction:row;
+    flex-wrap:wrap;
+    margin:auto;
+    border-collapse: collapse;
+    width: 100%;
+    margin-top: 2em;
 }
 #text-left{
-front-weight:700px:
+    front-weight:700px:
 }
 
 th,td{
-border:1px solid, black;
-border: 1px solid #ccc;
-padding: 0.5em;
-text-align: left;
+    border:1px solid, black;
+    border: 1px solid #ccc;
+    padding: 0.5em;
+    text-align: left;
 }
 th{
-background-color: #f2f2f2;
+    background-color: #f2f2f2;
 }
 input {
       margin: 0.5em 0;
@@ -52,9 +53,14 @@ button {
       padding: 0.5em 1em;
       background-color: #0077cc;
       color: white;
-      border: none;
+      border: 2px black;
       cursor: pointer;
     }
-body.form-control{
-background-color:blue;
+a,btn-primary{
+padding: 0.09em 1em;
+      background-color: #0077cc;
+      color: white;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
 }

@@ -1,6 +1,5 @@
 package com.abernathyclinic.medilabo_frontend.controller;
 
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.ui.Model;
 import com.abernathyclinic.medilabo_frontend.model.Patient;
@@ -9,8 +8,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.time.LocalDate;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -31,7 +31,7 @@ public class HomeController {
         Patient[] response = restTemplate.getForObject(baseUrl + "/all", Patient[].class);
         List<Patient> patientList = Arrays.asList(response);
         model.addAttribute("patients", patientList);
-        return "index";
+        return "add";
     }
 
     @GetMapping("/add")
@@ -48,14 +48,13 @@ public class HomeController {
     }
 
     @PostMapping("/add")
-    public String addPatient(@ModelAttribute Patient patient, Model model) {
+    public String addPatient(@ModelAttribute Patient patient, RedirectAttributes redirectAttributes) {
         log.info("Patient added: {}", patient);
         try {
             restTemplate.postForEntity(baseUrl, patient, Patient.class);
+            redirectAttributes.addFlashAttribute("Success","Patient added successfully.");
         } catch (Exception e) {
             log.error("No patients found!", e);
-            model.addAttribute("error", "Failed to add patient.");
-            return "add";
         }
         return "redirect:/ui/add";
     }

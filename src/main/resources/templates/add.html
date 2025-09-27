@@ -3,18 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <title>Add Patient</title>
-    <link rel="stylesheet" th:href="@{/styles.css}" />
+    <link rel="stylesheet" th:href="@{/styles.css}"/>
 </head>
 <body>
 <h1>Add New Patient</h1>
 <form th:action="@{/ui/add}" method="post" th:object="${patient}">
     <div class="form-group row">
-        <input type="text" th:field="*{lastName}" class="form-control" placeholder="Last Name" required />
-        <input type="text" th:field="*{firstName}" class="form-control" placeholder="First Name" required />
-        <input type="text" th:field="*{birthdate}" class="form-control" required />
-        <input type="text" th:field="*{gender}" class="form-control" placeholder="Gender" />
-        <input type="text" th:field="*{address}" class="form-control" placeholder="Address" required />
-        <input type="text" th:field="*{phone}" class="form-control" placeholder="Phone" required />
+        <input type="text" th:field="*{lastName}" class="form-control" placeholder="Last Name" required/>
+        <input type="text" th:field="*{firstName}" class="form-control" placeholder="First Name" required/>
+        <input type="text" th:field="*{birthdate}" class="form-control" required/>
+        <input type="text" th:field="*{gender}" class="form-control" placeholder="Gender"/>
+        <input type="text" th:field="*{address}" class="form-control" placeholder="Address" required/>
+        <input type="text" th:field="*{phone}" class="form-control" placeholder="Phone" required/>
     </div>
     <button type="submit" class="btn btn-primary mt-3">Save Patient</button>
 </form>
@@ -47,6 +47,13 @@
 
     </tbody>
 </table>
-<a th:href="@{/}">Back to Homepage!</a>
+<div th:if="${success}" class="success">
+    <p th:text="${success}"></p>
+</div>
+<div th:if="${error}" class="error">
+    <p th:text="${error}"></p>
+</div>
+
+<a th:href="@{/}" class="btn btn-primary mt-3">Back to Homepage!</a>
 </body>
 </html>
