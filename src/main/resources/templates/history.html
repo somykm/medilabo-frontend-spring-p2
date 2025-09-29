@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Patient Note</title>
+    <link rel="stylesheet" th:href="@{/styles.css}"/>
+</head>
+<body>
+<h1>Patient History</h1>
+
+<table>
+    <thead>
+    <tr>
+        <th>patId</th>
+        <th>Patient</th>
+        <th>Note</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="note : ${notes}">
+        <td th:text="${note.patId}">patId</td>
+        <td th:text="${note.firstName + ' ' + note.lastname}">Patient</td>
+        <td th:text="${note.note}">Note</td>
+    </tr>
+    </tbody>
+</table>
+
+<h3>Add New Note</h3>
+<form th:action="@{/ui/history/add}" method="post" th:object="${note}">
+    <input type="hidden" th:field="*{patId}" />
+    <input type="text" th:field="*{firstName}" placeholder="First Name" required />
+    <input type="text" th:field="*{lastname}" placeholder="Last Name" required />
+    <textarea th:field="*{note}" placeholder="Observation note" required></textarea>
+    <button type="submit">Add Note</button>
+</form>
+</body>
+</html>
