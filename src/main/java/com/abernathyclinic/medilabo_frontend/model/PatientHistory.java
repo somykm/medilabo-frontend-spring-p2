@@ -2,10 +2,11 @@ package com.abernathyclinic.medilabo_frontend.model;
 
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 public class PatientHistory {
+    private String _id;
     private Integer patId;
-    private String note;
-    private String firstName;
-    private String lastname;
+    private List<String> notes;
 }

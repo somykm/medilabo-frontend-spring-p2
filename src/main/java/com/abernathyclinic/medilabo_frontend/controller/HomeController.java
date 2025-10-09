@@ -1,5 +1,6 @@
 package com.abernathyclinic.medilabo_frontend.controller;
 
+import com.abernathyclinic.medilabo_frontend.model.PatientHistory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.ui.Model;
 import com.abernathyclinic.medilabo_frontend.model.Patient;
@@ -43,6 +44,14 @@ public class HomeController {
             model.addAttribute("patients", Collections.emptyList());
             model.addAttribute("error", "Unable to fetch patient list.");
         }
+        try {
+            PatientHistory[] allNotes = restTemplate.getForObject("http://localhost:8083/api/history/all", PatientHistory[].class);
+            model.addAttribute("notes", Arrays.asList(allNotes));
+        } catch (Exception e) {
+            model.addAttribute("notes", Collections.emptyList());
+            model.addAttribute("error", "Unable to fetch patient history.");
+        }
+
         return "add";
     }
 
@@ -70,4 +79,5 @@ public class HomeController {
         restTemplate.put(baseUrl + "/" + id, patient);
         return "redirect:/ui/add";
     }
+
 }
