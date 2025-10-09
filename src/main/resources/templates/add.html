@@ -22,6 +22,7 @@
 <table>
     <thead>
     <tr>
+        <th class="text-left">patId</th>
         <th class="text-left">Last Name</th>
         <th class="text-left">First Name</th>
         <th class="text-left">Date of Birth</th>
@@ -33,6 +34,7 @@
     </thead>
     <tbody>
     <tr th:each="p : ${patients}">
+        <td th:text="${p.id}">Id</td>
         <td th:text="${p.lastName}">Last</td>
         <td th:text="${p.firstName}">First</td>
         <td th:text="${p.birthdate}">DOB</td>
@@ -47,6 +49,30 @@
 
     </tbody>
 </table>
+<h2>Patient History Notes</h2>
+<table>
+    <thead>
+    <tr>
+        <th>patId</th>
+        <th>Notes</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="note : ${notes}">
+        <td th:text="${note.patId}">patId</td>
+        <td>
+            <ul th:if="${note.notes != null}">
+                <li th:each="n : ${note.notes}" th:text="${n}">Note</li>
+            </ul>
+            <span th:if="${note.notes == null or #lists.isEmpty(note.notes)}">No notes available</span>
+        </td>
+    </tr>
+    <tr th:if="${#lists.isEmpty(notes)}">
+        <td colspan="2">No notes found.</td>
+    </tr>
+    </tbody>
+</table>
+<a th:href="@{'/ui/history/'}">Add Note</a>
 <a th:href="@{/}" class="btn btn-primary mt-3">Back to Homepage!</a>
 </body>
 </html>
