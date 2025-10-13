@@ -22,7 +22,7 @@
     <tbody>
     <tr th:each="note : ${notes}">
         <td th:text="${note.patId}">patId</td>
-        <td>Unknown</td> <!-- You can enrich this later with patient name -->
+        <td th:text="${note.fullName}">Patient Name</td>
         <td>
             <ul th:if="${note.notes != null}">
                 <li th:each="n : ${note.notes}" th:text="${n}">Note</li>
