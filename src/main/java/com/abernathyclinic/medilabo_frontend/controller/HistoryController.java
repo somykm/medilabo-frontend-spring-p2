@@ -1,5 +1,6 @@
 package com.abernathyclinic.medilabo_frontend.controller;
 
+import com.abernathyclinic.medilabo_frontend.model.Patient;
 import com.abernathyclinic.medilabo_frontend.model.PatientHistory;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +13,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -24,14 +27,25 @@ public class HistoryController {
 
     @GetMapping("/")
     public String viewHistory(Model model) {
-        log.info("Fetching history for patient ID: {}");
+        log.info("Fetching history for patient ID");
 
         PatientHistory[] allNotes = restTemplate.getForObject(url + "/all", PatientHistory[].class);
-        List<PatientHistory> filtered = Arrays.stream(allNotes)
+        List<PatientHistory> filtered = Arrays.stream(allNotes).collect(Collectors.toList());
 
-                .collect(Collectors.toList());
-        log.info("Fetched {} notes", filtered.size());
-        filtered.forEach(n -> log.info("Note for {}: {}", n.getFullName(), n.getNotes()));
+        //Declare patientMap as a local variable
+        Patient[] allPatients = restTemplate.getForObject("http://localhost:8081/api/patient/all", Patient[].class);
+        Map<Integer, Patient> patientMap = Arrays.stream(allPatients)
+                .collect(Collectors.toMap(Patient::getId, Function.identity()));
+
+        // Enrich each note with fullName using patientMap
+        for (PatientHistory history : filtered) {
+            Patient patient = patientMap.get(history.getPatId());
+            if (patient != null) {
+                history.setFullName(patient.getFirstName() + " " + patient.getLastName());
+            } else {
+                log.warn("No patient found for patId: {}", history.getPatId());
+            }
+        }
 
         model.addAttribute("notes", filtered);
         model.addAttribute("note", new PatientHistory());
@@ -49,7 +63,7 @@ public class HistoryController {
         try {
             restTemplate.postForEntity(url, note, Void.class);
             redirectAttributes.addFlashAttribute("success", "Note added successfully.");
-        } catch (RestClientException e){
+        } catch (RestClientException e) {
             redirectAttributes.addFlashAttribute("error", "Failed to add note:" + e.getMessage());
         }
         return "redirect:/ui/history/#addForm";
