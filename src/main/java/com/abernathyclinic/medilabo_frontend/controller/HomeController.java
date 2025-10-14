@@ -14,6 +14,9 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Controller
@@ -37,16 +40,37 @@ public class HomeController {
     @GetMapping("/add")
     public String showAddForm(Model model) {
         model.addAttribute("patient", new Patient());
+
+        List<Patient> patientList;
         try {
             ResponseEntity<Patient[]> response = restTemplate.getForEntity(baseUrl + "/all", Patient[].class);
-            model.addAttribute("patients", Arrays.asList(response.getBody()));
+            patientList = Arrays.asList(response.getBody());
+            model.addAttribute("patients", patientList);
         } catch (Exception e) {
-            model.addAttribute("patients", Collections.emptyList());
+            patientList = Collections.emptyList();
+            model.addAttribute("patients", patientList);
             model.addAttribute("error", "Unable to fetch patient list.");
         }
+
+        List<PatientHistory> noteList;
         try {
             PatientHistory[] allNotes = restTemplate.getForObject("http://localhost:8083/api/history/all", PatientHistory[].class);
-            model.addAttribute("notes", Arrays.asList(allNotes));
+            noteList = Arrays.asList(allNotes);
+
+            // Enrich notes with fullName
+            Map<Integer, Patient> patientMap = patientList.stream()
+                    .collect(Collectors.toMap(Patient::getId, Function.identity()));
+
+            for (PatientHistory history : noteList) {
+                Patient patient = patientMap.get(history.getPatId());
+                if (patient != null) {
+                    history.setFullName(patient.getFirstName() + " " + patient.getLastName());
+                } else {
+                    history.setFullName("Unknown");
+                }
+            }
+
+            model.addAttribute("notes", noteList);
         } catch (Exception e) {
             model.addAttribute("notes", Collections.emptyList());
             model.addAttribute("error", "Unable to fetch patient history.");
