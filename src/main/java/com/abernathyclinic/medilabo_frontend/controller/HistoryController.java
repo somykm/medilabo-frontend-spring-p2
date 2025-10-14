@@ -30,6 +30,8 @@ public class HistoryController {
         List<PatientHistory> filtered = Arrays.stream(allNotes)
 
                 .collect(Collectors.toList());
+        log.info("Fetched {} notes", filtered.size());
+        filtered.forEach(n -> log.info("Note for {}: {}", n.getFullName(), n.getNotes()));
 
         model.addAttribute("notes", filtered);
         model.addAttribute("note", new PatientHistory());

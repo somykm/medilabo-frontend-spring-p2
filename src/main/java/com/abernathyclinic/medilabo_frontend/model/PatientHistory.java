@@ -9,4 +9,5 @@ public class PatientHistory {
     private String _id;
     private Integer patId;
     private List<String> notes;
+    private String fullName;
 }
