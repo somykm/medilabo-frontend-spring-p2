@@ -2,8 +2,12 @@ package com.abernathyclinic.medilabo_frontend.controller;
 
 import com.abernathyclinic.medilabo_frontend.model.Patient;
 import com.abernathyclinic.medilabo_frontend.model.PatientHistory;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -26,8 +30,13 @@ public class HistoryController {
     private final String url = "http://localhost:8083/api/history";
 
     @GetMapping("/")
-    public String viewHistory(Model model) {
+    public String viewHistory(Model model, HttpServletRequest servletRequest) {
         log.info("Fetching history for patient ID");
+
+        String sessionCookie = getSessionCookie(servletRequest);
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Cookie", sessionCookie);
+        HttpEntity<Void> entity =new HttpEntity<>(headers);
 
         PatientHistory[] allNotes = restTemplate.getForObject(url + "/all", PatientHistory[].class);
         List<PatientHistory> filtered = Arrays.stream(allNotes).collect(Collectors.toList());
@@ -51,6 +60,17 @@ public class HistoryController {
         model.addAttribute("note", new PatientHistory());
 
         return "history";
+    }
+
+    private String getSessionCookie(HttpServletRequest servletRequest) {
+        if(servletRequest.getCookies()!=null){
+            for(Cookie cookie : servletRequest.getCookies()){
+                if("JSESSIONID".equals(cookie.getName())){
+                    return "JSESSIONID=" + cookie.getValue();
+                }
+            }
+        }
+        return null;
     }
 
     @PostMapping("/add")
