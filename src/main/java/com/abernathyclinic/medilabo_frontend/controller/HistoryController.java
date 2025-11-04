@@ -2,20 +2,18 @@ package com.abernathyclinic.medilabo_frontend.controller;
 
 import com.abernathyclinic.medilabo_frontend.model.Patient;
 import com.abernathyclinic.medilabo_frontend.model.PatientHistory;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -25,75 +23,97 @@ import java.util.stream.Collectors;
 @Controller
 @RequestMapping("/ui/history")
 public class HistoryController {
+
     @Autowired
     private RestTemplate restTemplate;
-    private final String url = "http://localhost:8083/api/history";
 
-    @GetMapping("/")
-    public String viewHistory(Model model, HttpServletRequest servletRequest) {
-        log.info("Fetching history for patient ID");
+    private final String historyUrl = "http://localhost:8085/api/history";
+    private final String patientUrl = "http://localhost:8085/api/patient/all";
 
-        String sessionCookie = getSessionCookie(servletRequest);
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Cookie", sessionCookie);
-        HttpEntity<Void> entity =new HttpEntity<>(headers);
-
-        PatientHistory[] allNotes = restTemplate.getForObject(url + "/all", PatientHistory[].class);
-        List<PatientHistory> filtered = Arrays.stream(allNotes).collect(Collectors.toList());
-
-        //Declare patientMap as a local variable
-        Patient[] allPatients = restTemplate.getForObject("http://localhost:8081/api/patient/all", Patient[].class);
-        Map<Integer, Patient> patientMap = Arrays.stream(allPatients)
-                .collect(Collectors.toMap(Patient::getId, Function.identity()));
-
-        // Enrich each note with fullName using patientMap
-        for (PatientHistory history : filtered) {
-            Patient patient = patientMap.get(history.getPatId());
-            if (patient != null) {
-                history.setFullName(patient.getFirstName() + " " + patient.getLastName());
-            } else {
-                log.warn("No patient found for patId: {}", history.getPatId());
-            }
-        }
-
-        model.addAttribute("notes", filtered);
-        model.addAttribute("note", new PatientHistory());
-
-        return "history";
+    @GetMapping
+    public String redirectToHistorySlash() {
+        return "redirect:/ui/history/";
     }
 
-    private String getSessionCookie(HttpServletRequest servletRequest) {
-        if(servletRequest.getCookies()!=null){
-            for(Cookie cookie : servletRequest.getCookies()){
-                if("JSESSIONID".equals(cookie.getName())){
-                    return "JSESSIONID=" + cookie.getValue();
-                }
-            }
+    @GetMapping("/")
+    public String showHistory(Model model) {
+        List<PatientHistory> notes = fetchNotes();
+        List<Patient> patients = fetchPatients();
+
+        Map<Integer, Patient> patientMap = patients.stream()
+                .collect(Collectors.toMap(Patient::getId, Function.identity()));
+
+        for (PatientHistory note : notes) {
+            Patient p = patientMap.get(note.getPatId());
+            note.setFullName(p != null ? p.getFirstName() + " " + p.getLastName() : "Unknown");
         }
-        return null;
+
+        model.addAttribute("notes", notes);
+        model.addAttribute("note", new PatientHistory());
+        return "history";
     }
 
     @PostMapping("/add")
-    public String addNote(@ModelAttribute PatientHistory note, RedirectAttributes redirectAttributes) {
+    public String addNote(@ModelAttribute PatientHistory note,
+                          RedirectAttributes redirectAttributes) {
         if (note.getNotes() == null || note.getNotes().isEmpty() || note.getNotes().get(0).isBlank()) {
-            log.warn("No notes found for patient ID: {}", note.getPatId());
             redirectAttributes.addFlashAttribute("error", "Note cannot be empty.");
             return "redirect:/ui/history/#addForm";
         }
+
+        HttpEntity<PatientHistory> entity = new HttpEntity<>(note);
+
         try {
-            restTemplate.postForEntity(url, note, Void.class);
-            redirectAttributes.addFlashAttribute("success", "Note added successfully.");
-        } catch (RestClientException e) {
-            redirectAttributes.addFlashAttribute("error", "Failed to add note:" + e.getMessage());
+            restTemplate.postForEntity(historyUrl, entity, Void.class);
+            redirectAttributes.addFlashAttribute("success", "Note added.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Failed to add note.");
         }
-        return "redirect:/ui/history/#addForm";
+
+        return "redirect:/ui/history";
     }
 
     @GetMapping("/add/{patId}")
-    public String showAddPage(@PathVariable Integer patId, Model model) {
-        PatientHistory history = new PatientHistory();
-        history.setPatId(patId);
-        model.addAttribute("note", history);
+    public String showAddNoteForm(@PathVariable Integer patId, Model model) {
+        PatientHistory note = new PatientHistory();
+        note.setPatId(patId);
+        model.addAttribute("note", note);
+
+        List<PatientHistory> notes = fetchNotes();
+        List<Patient> patients = fetchPatients();
+
+        Map<Integer, Patient> patientMap = patients.stream()
+                .collect(Collectors.toMap(Patient::getId, Function.identity()));
+
+        for (PatientHistory history : notes) {
+            Patient patient = patientMap.get(history.getPatId());
+            if (patient != null) {
+                history.setFullName(patient.getFirstName() + " " + patient.getLastName());
+            }
+        }
+
+        model.addAttribute("notes", notes);
         return "history";
+    }
+
+    // Helpers
+    private List<PatientHistory> fetchNotes() {
+        try {
+            ResponseEntity<PatientHistory[]> response = restTemplate.getForEntity(
+                    historyUrl + "/all", PatientHistory[].class);
+            return Arrays.asList(response.getBody());
+        } catch (Exception e) {
+            return Collections.emptyList();
+        }
+    }
+
+    private List<Patient> fetchPatients() {
+        try {
+            ResponseEntity<Patient[]> response = restTemplate.getForEntity(
+                    patientUrl, Patient[].class);
+            return Arrays.asList(response.getBody());
+        } catch (Exception e) {
+            return Collections.emptyList();
+        }
     }
 }

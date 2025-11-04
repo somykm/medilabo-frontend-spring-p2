@@ -1,12 +1,6 @@
 package com.abernathyclinic.medilabo_frontend.controller;
 
 import com.abernathyclinic.medilabo_frontend.model.PatientHistory;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.ui.Model;
 import com.abernathyclinic.medilabo_frontend.model.Patient;
@@ -32,128 +26,83 @@ public class HomeController {
     @Autowired
     private RestTemplate restTemplate;
 
-    private final String baseUrl = "http://localhost:8081/api/patient";
+    private final String baseUrl = "http://localhost:8085/api/patient";
 
     @GetMapping("/")
-    public String listPatients(Model model, HttpServletRequest servletRequest) {
-        String sessionCookie = getSessionCookie(servletRequest);
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Cookie", sessionCookie);
-        HttpEntity<Void> entity = new HttpEntity<>(headers);
-
-        log.info("Fetching patient list for homepage");
-
+    public String listPatients(Model model) {
         try {
-            ResponseEntity<Patient[]> response = restTemplate.exchange(
-                    baseUrl + "/all", HttpMethod.GET, entity, Patient[].class);
-            List<Patient> patientList = Arrays.asList(response.getBody());
-            model.addAttribute("patients", patientList);
+            ResponseEntity<Patient[]> response = restTemplate.getForEntity(
+                    baseUrl + "/all", Patient[].class);
+            model.addAttribute("patients", Arrays.asList(response.getBody()));
         } catch (Exception e) {
-            log.error("Access denied or failed to fetch patients", e);
             model.addAttribute("patients", Collections.emptyList());
             model.addAttribute("error", "Unable to fetch patient list.");
         }
         return "add";
     }
 
-    private String getSessionCookie(HttpServletRequest servletRequest) {
-        if (servletRequest.getCookies() != null) {
-            for (Cookie cookie : servletRequest.getCookies()) {
-                if ("JSESSIONID".equals(cookie.getName())) {
-                    return "JSESSIONID=" + cookie.getValue();
-                }
-            }
-        }
-        return null;
-    }
-
     @GetMapping("/add")
-    public String showAddForm(Model model, HttpServletRequest request) {
+    public String showAddForm(Model model) {
         model.addAttribute("patient", new Patient());
 
-        String sessionCookie = getSessionCookie(request);
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Cookie", sessionCookie);
-        HttpEntity<Void> entity = new HttpEntity<>(headers);
+        List<Patient> patientList = fetchPatients();
+        model.addAttribute("patients", patientList);
 
-        List<Patient> patientList;
-        try {
-            ResponseEntity<Patient[]> response = restTemplate.exchange(
-                    baseUrl + "/all", HttpMethod.GET, entity, Patient[].class);
-            patientList = Arrays.asList(response.getBody());
-            model.addAttribute("patients", patientList);
-        } catch (Exception e) {
-            patientList = Collections.emptyList();
-            model.addAttribute("patients", patientList);
-            model.addAttribute("error", "Unable to fetch patient list.");
-        }
-
-        List<PatientHistory> noteList;
-        try {
-            ResponseEntity<PatientHistory[]> response = restTemplate.exchange(
-                    "http://localhost:8083/api/history/all", HttpMethod.GET, entity, PatientHistory[].class);
-            noteList = Arrays.asList(response.getBody());
-
-            Map<Integer, Patient> patientMap = patientList.stream()
-                    .collect(Collectors.toMap(Patient::getId, Function.identity()));
-
-            for (PatientHistory history : noteList) {
-                Patient patient = patientMap.get(history.getPatId());
-                history.setFullName(patient != null
-                        ? patient.getFirstName() + " " + patient.getLastName()
-                        : "Unknown");
-            }
-
-            model.addAttribute("notes", noteList);
-        } catch (Exception e) {
-            model.addAttribute("notes", Collections.emptyList());
-            model.addAttribute("error", "Unable to fetch patient history.");
-        }
+        List<PatientHistory> noteList = fetchNotes(patientList);
+        model.addAttribute("notes", noteList);
 
         return "add";
     }
 
     @PostMapping("/add")
     public String addPatient(@ModelAttribute Patient patient,
-                             RedirectAttributes redirectAttributes,
-                             HttpServletRequest servletRequest) {
-        log.info("Patient added: {}", patient);
-        String sessionCookie = getSessionCookie(servletRequest);
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Cookie", sessionCookie);
-        HttpEntity<Patient> entity = new HttpEntity<>(patient, headers);
+                             RedirectAttributes redirectAttributes) {
         try {
-            restTemplate.exchange(baseUrl, HttpMethod.POST, entity, Patient.class);
-            redirectAttributes.addFlashAttribute("Success", "Patient added successfully.");
+            restTemplate.postForEntity(baseUrl, patient, Patient.class);
+            redirectAttributes.addFlashAttribute("success", "Patient added successfully.");
         } catch (Exception e) {
-            log.error("No patients found!", e);
+            redirectAttributes.addFlashAttribute("error", "Failed to add patient.");
         }
         return "redirect:/ui/add";
     }
 
     @GetMapping("/edit/{id}")
-    public String showEditForm(@PathVariable Integer id, Model model,
-                               HttpServletRequest servletRequest) {
-        String sessionCookie = getSessionCookie(servletRequest);
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Cookie", sessionCookie);
-        HttpEntity<Void> entity = new HttpEntity<>(headers);
-
-        ResponseEntity<Patient> response = restTemplate.exchange(baseUrl + "/" + id, HttpMethod.GET, entity, Patient.class);
+    public String showEditForm(@PathVariable Integer id, Model model) {
+        ResponseEntity<Patient> response = restTemplate.getForEntity(baseUrl + "/" + id, Patient.class);
         model.addAttribute("patient", response.getBody());
         return "edit";
     }
 
     @PostMapping("/update/{id}")
-    public String updatePatient(@PathVariable Integer id, @ModelAttribute Patient patient,
-                                HttpServletRequest servletRequest) {
-        String sessionCookie = getSessionCookie(servletRequest);
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Cookie", sessionCookie);
-        HttpEntity<Patient> entity = new HttpEntity<>(patient, headers);
-
-        restTemplate.exchange(baseUrl + "/" + id, HttpMethod.PUT, entity, Void.class);
+    public String updatePatient(@PathVariable Integer id, @ModelAttribute Patient patient) {
+        restTemplate.put(baseUrl + "/" + id, patient);
         return "redirect:/ui/add";
     }
 
+    // Helpers
+    private List<Patient> fetchPatients() {
+        try {
+            ResponseEntity<Patient[]> response = restTemplate.getForEntity(
+                    baseUrl + "/all", Patient[].class);
+            return Arrays.asList(response.getBody());
+        } catch (Exception e) {
+            return Collections.emptyList();
+        }
+    }
+    private List<PatientHistory> fetchNotes(List<Patient> patients) {
+        try {
+            ResponseEntity<PatientHistory[]> response = restTemplate.getForEntity(
+                    "http://localhost:8085/api/history/all", PatientHistory[].class);
+            Map<Integer, Patient> patientMap = patients.stream()
+                    .collect(Collectors.toMap(Patient::getId, Function.identity()));
+            List<PatientHistory> notes = Arrays.asList(response.getBody());
+            for (PatientHistory note : notes) {
+                Patient p = patientMap.get(note.getPatId());
+                note.setFullName(p != null ? p.getFirstName() + " " + p.getLastName() : "Unknown");
+            }
+            return notes;
+        } catch (Exception e) {
+            return Collections.emptyList();
+        }
+    }
 }
