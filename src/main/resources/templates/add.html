@@ -53,9 +53,9 @@
 <table>
     <thead>
     <tr>
-        <th>patId</th>
-        <th>Patient Name</th>
-        <th>Notes</th>
+        <th class="text-left">patId</th>
+        <th class="text-left">Patient Name</th>
+        <th class="text-left">Notes</th>
     </tr>
     </thead>
     <tbody>
@@ -63,7 +63,7 @@
         <td th:text="${note.patId}">patId</td>
         <td th:text="${note.fullName}">Patient Name</td>
         <td>
-            <ul th:if="${note.notes != null}">
+            <ul th:if="${note.notes != null and !#lists.isEmpty(note.notes)}">
                 <li th:each="n : ${note.notes}" th:text="${n}">Note</li>
             </ul>
             <span th:if="${note.notes == null or #lists.isEmpty(note.notes)}">No notes available</span>
@@ -74,6 +74,25 @@
     </tr>
     </tbody>
 </table>
+<h3>Diabetes Risk Levels</h3>
+<table>
+    <thead>
+    <tr>
+        <th class="text-left">PatID</th>
+        <th class="text-left">Expected Risk</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="risk : ${risks}">
+        <td th:text="${risk.patId}">patId</td>
+        <td th:text="${risk.expectedRisks}">RiskLevel</td>
+    </tr>
+    <tr th:if="${#lists.isEmpty(patients)}">
+        <td colspan="2">No risk data available.</td>
+    </tr>
+    </tbody>
+</table>
+
 <a th:href="@{'/ui/history/'}">Add Note</a>
 <a th:href="@{/}" class="btn btn-primary mt-3">Back to Homepage!</a>
 </body>

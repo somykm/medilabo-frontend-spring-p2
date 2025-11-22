@@ -37,17 +37,17 @@ public class HistoryController {
 
     @GetMapping("/")
     public String showHistory(Model model) {
+        log.info("Fetching history notes and patient list for UI display.");
         List<PatientHistory> notes = fetchNotes();
         List<Patient> patients = fetchPatients();
 
         Map<Integer, Patient> patientMap = patients.stream()
                 .collect(Collectors.toMap(Patient::getId, Function.identity()));
 
+        System.out.println("Fetched notes count: " + notes.size());
         for (PatientHistory note : notes) {
-            Patient p = patientMap.get(note.getPatId());
-            note.setFullName(p != null ? p.getFirstName() + " " + p.getLastName() : "Unknown");
+            System.out.println("Patient " + note.getPatId() + " notes: " + note.getNotes());
         }
-
         model.addAttribute("notes", notes);
         model.addAttribute("note", new PatientHistory());
         return "history";
@@ -56,6 +56,7 @@ public class HistoryController {
     @PostMapping("/add")
     public String addNote(@ModelAttribute PatientHistory note,
                           RedirectAttributes redirectAttributes) {
+        log.info("Trying to add note for patient ID:{}", note.getPatId());
         if (note.getNotes() == null || note.getNotes().isEmpty() || note.getNotes().get(0).isBlank()) {
             redirectAttributes.addFlashAttribute("error", "Note cannot be empty.");
             return "redirect:/ui/history/#addForm";
@@ -65,9 +66,11 @@ public class HistoryController {
 
         try {
             restTemplate.postForEntity(historyUrl, entity, Void.class);
-            redirectAttributes.addFlashAttribute("success", "Note added.");
+            //redirectAttributes.addFlashAttribute("success", "Note added.");
+            log.info("Note successfully added for patient with Id:{}", note.getPatId());
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Failed to add note.");
+            //redirectAttributes.addFlashAttribute("error", "Failed to add note.");
+            log.error("Failed to add note for patient ID {}: {}", note.getPatId(), e.getMessage());
         }
 
         return "redirect:/ui/history";
@@ -78,7 +81,7 @@ public class HistoryController {
         PatientHistory note = new PatientHistory();
         note.setPatId(patId);
         model.addAttribute("note", note);
-
+        log.info("Preparing add-note form for patient ID: {}", patId);
         List<PatientHistory> notes = fetchNotes();
         List<Patient> patients = fetchPatients();
 
