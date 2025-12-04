@@ -33,11 +33,20 @@ table,thead,tbody{
     front-weight:700px:
 }
 
+.diagnosis-text, td {
+    padding-left: 10px;
+    text-indent: 0;
+    overflow: visible;
+    letter-spacing: normal;
+}
+
 th,td{
     border:1px solid, black;
     border: 1px solid #ccc;
     padding: 0.5em;
     text-align: left;
+    padding-left: 2px;
+        text-indent: 0;
 }
 th{
     background-color: #f2f2f2;

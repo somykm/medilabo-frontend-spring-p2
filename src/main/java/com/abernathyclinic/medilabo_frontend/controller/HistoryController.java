@@ -66,10 +66,8 @@ public class HistoryController {
 
         try {
             restTemplate.postForEntity(historyUrl, entity, Void.class);
-            //redirectAttributes.addFlashAttribute("success", "Note added.");
             log.info("Note successfully added for patient with Id:{}", note.getPatId());
         } catch (Exception e) {
-            //redirectAttributes.addFlashAttribute("error", "Failed to add note.");
             log.error("Failed to add note for patient ID {}: {}", note.getPatId(), e.getMessage());
         }
 
@@ -99,7 +97,6 @@ public class HistoryController {
         return "history";
     }
 
-    // Helpers
     private List<PatientHistory> fetchNotes() {
         try {
             ResponseEntity<PatientHistory[]> response = restTemplate.getForEntity(

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Patient Note</title>
-    <link rel="stylesheet" th:href="@{/styles.css}" />
+    <link rel="stylesheet" th:href="@{/styles.css}"/>
 </head>
 <body>
 <h1>Patient History</h1>
@@ -35,7 +35,7 @@
 <h3>Add Observation</h3>
 <form th:action="@{/ui/history/add}" method="post" th:object="${note}" id="addNote">
     <lable for="patId">Patient ID:</lable>
-    <input type="number" th:field="*{patId}" id="patId" required />
+    <input type="number" th:field="*{patId}" id="patId" required/>
 
     <lable for="noteText">Observation:</lable>
     <textarea th:field="*{notes[0]}" id="noteText" placeholder="Enter observation note" required></textarea>

@@ -29,10 +29,14 @@ public class HomeController {
 
     @GetMapping("/")
     public String listPatients(Model model) {
+        log.info("Getting all the patients");
         try {
+
             ResponseEntity<Patient[]> response = restTemplate.getForEntity(
                     patientUrl + "/all", Patient[].class);
-            model.addAttribute("patients", Arrays.asList(response.getBody()));
+            List<Patient> patients = Arrays.asList(response.getBody());
+            log.info("Get all the patient " + patients.size());
+            model.addAttribute("patients", patients);
         } catch (Exception e) {
             model.addAttribute("patients", Collections.emptyList());
             model.addAttribute("error", "Unable to fetch patient list.");
@@ -83,7 +87,6 @@ public class HomeController {
         return "redirect:/ui/add";
     }
 
-    //Sprint 3
     private List<Diabetes> fetchDiabetesRisks(List<Patient> patients, List<PatientHistory> histories) {
         List<Diabetes> risks = new ArrayList<>();
         Map<Integer, List<PatientHistory>> historyGroups = histories.stream()
@@ -96,7 +99,6 @@ public class HomeController {
                     risks.add(new Diabetes(patient.getId(), "No history found"));
                     continue;
                 }
-
                 List<String> allNotes = patientHistories.stream()
                         .flatMap(h -> h.getNotes().stream())
                         .toList();
@@ -104,7 +106,7 @@ public class HomeController {
                         riskUrl + "/" + patient.getId(), String.class);
 
                 String body = response.getBody();
-                String riskLevel = body != null && body.contains(":")
+                String riskLevel = body != null && body.contains(": ")
                         ? body.substring(body.lastIndexOf(":") + 3).trim()
                         : "Unknown";
 
@@ -117,7 +119,6 @@ public class HomeController {
         return risks;
     }
 
-    // Helpers
     private List<Patient> fetchPatients() {
         try {
             ResponseEntity<Patient[]> response = restTemplate.getForEntity(
@@ -148,5 +149,4 @@ public class HomeController {
             return Collections.emptyList();
         }
     }
-
 }
