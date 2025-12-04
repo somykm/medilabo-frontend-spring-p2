@@ -1,5 +1,5 @@
 # Use a base image with Java 17 already installed
-FROM eclipse-temurin:17-jdk-alpine
+FROM eclipse-temurin:21-jdk-alpine
 # Expose the port your app runs on
 EXPOSE 8082
 # Set working directory inside the container
@@ -11,6 +11,3 @@ COPY ${JAR_FILE} /app.jar
 
 # Run the Spring Boot application
 ENTRYPOINT ["java", "-jar", "/app.jar"]
-
-
-
