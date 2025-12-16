@@ -2,6 +2,11 @@ package com.abernathyclinic.medilabo_frontend.controller;
 
 import com.abernathyclinic.medilabo_frontend.model.Diabetes;
 import com.abernathyclinic.medilabo_frontend.model.PatientHistory;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.ui.Model;
 import com.abernathyclinic.medilabo_frontend.model.Patient;
@@ -26,14 +31,33 @@ public class HomeController {
 
     private final String patientUrl = "http://localhost:8085/api/patient";
     private final String riskUrl = "http://localhost:8085/api/diabetes";
+    private final String historyUrl = "http://localhost:8085/api/history";
 
     @GetMapping("/")
-    public String listPatients(Model model) {
+    public String listPatients(HttpServletRequest request, Model model) {
         log.info("Getting all the patients");
-        try {
+        // Get logged-in username from SecurityContext
+        String username = org.springframework.security.core.context.SecurityContextHolder.getContext()
+                .getAuthentication() != null ?
+                org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName()
+                : "anonymous";
+        model.addAttribute("username", username);
 
-            ResponseEntity<Patient[]> response = restTemplate.getForEntity(
-                    patientUrl + "/all", Patient[].class);
+        // Read JSESSIONID cookie (JWT)
+        String jsessionid = getCookieValue(request, "AUTH_TOKEN");
+
+        HttpHeaders headers = new HttpHeaders();
+        if (jsessionid != null) {
+            headers.add(HttpHeaders.COOKIE, "AUTH_TOKEN=" + jsessionid);
+        }
+        HttpEntity<Void> entity = new HttpEntity<>(headers);
+        try {
+            ResponseEntity<Patient[]> response = restTemplate.exchange(
+                    patientUrl + "/all",
+                    HttpMethod.GET,
+                    entity,
+                    Patient[].class
+            );
             List<Patient> patients = Arrays.asList(response.getBody());
             log.info("Get all the patient " + patients.size());
             model.addAttribute("patients", patients);
@@ -45,27 +69,33 @@ public class HomeController {
     }
 
     @GetMapping("/add")
-    public String showAddForm(Model model) {
+    public String showAddForm(HttpServletRequest request, Model model) {
         model.addAttribute("patient", new Patient());
 
-        List<Patient> patientList = fetchPatients();
+        List<Patient> patientList = fetchPatients(request);
         model.addAttribute("patients", patientList);
 
-        List<PatientHistory> noteList = fetchNotes(patientList);
+        List<PatientHistory> noteList = fetchNotes(request, patientList);
         System.out.println("Fetched notes: " + noteList.size());
         model.addAttribute("notes", noteList);
 
-        List<Diabetes> riskList = fetchDiabetesRisks(patientList, noteList);
+        List<Diabetes> riskList = fetchDiabetesRisks(request, patientList, noteList);
         model.addAttribute("risks", riskList);
 
         return "add";
     }
 
     @PostMapping("/add")
-    public String addPatient(@ModelAttribute Patient patient,
+    public String addPatient(HttpServletRequest request, @ModelAttribute Patient patient,
                              RedirectAttributes redirectAttributes) {
         try {
-            restTemplate.postForEntity(patientUrl, patient, Patient.class);
+            String jsessionid = getCookieValue(request, "AUTH_TOKEN");
+            HttpHeaders headers = new HttpHeaders();
+            if (jsessionid != null) {
+                headers.add(HttpHeaders.COOKIE, "AUTH_TOKEN=" + jsessionid);
+            }
+            HttpEntity<Patient> entity = new HttpEntity<>(patient, headers);
+            restTemplate.postForEntity(patientUrl, entity, Patient.class);
             redirectAttributes.addFlashAttribute("success", "Patient added successfully.");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", "Failed to add patient.");
@@ -74,65 +104,147 @@ public class HomeController {
     }
 
     @GetMapping("/edit/{id}")
-    public String showEditForm(@PathVariable Integer id, Model model) {
-        //ResponseEntity<Patient> response = restTemplate.getForEntity(baseUrl + "/" + id, Patient.class);
-        ResponseEntity<PatientHistory[]> response = restTemplate.getForEntity("http://localhost:8085/api/history/all", PatientHistory[].class);
+    public String showEditForm(HttpServletRequest request, @PathVariable Integer id, Model model) {
+        String jsessionid = getCookieValue(request, "AUTH_TOKEN");
+        HttpHeaders headers = new HttpHeaders();
+        if (jsessionid != null) {
+            headers.add(HttpHeaders.COOKIE, "AUTH_TOKEN=" + jsessionid);
+        }
+        HttpEntity<Void> entity = new HttpEntity<>(headers);
+        ResponseEntity<Patient> response = restTemplate.exchange(
+                patientUrl + "/" + id,
+                HttpMethod.GET,
+                entity,
+                Patient.class
+        );
+
         model.addAttribute("patient", response.getBody());
         return "edit";
     }
 
     @PostMapping("/update/{id}")
-    public String updatePatient(@PathVariable Integer id, @ModelAttribute Patient patient) {
-        restTemplate.put(patientUrl + "/" + id, patient);
+    public String updatePatient(HttpServletRequest request,
+                                @PathVariable Integer id,
+                                @ModelAttribute Patient patient) {
+        String jsessionid = getCookieValue(request, "AUTH_TOKEN");
+        HttpHeaders headers = new HttpHeaders();
+        if (jsessionid != null) {
+            headers.add(HttpHeaders.COOKIE, "AUTH_TOKEN=" + jsessionid);
+        }
+        HttpEntity<Patient> entity = new HttpEntity<>(patient, headers);
+        restTemplate.exchange(patientUrl + "/" + id, HttpMethod.PUT, entity, Void.class);
         return "redirect:/ui/add";
     }
 
-    private List<Diabetes> fetchDiabetesRisks(List<Patient> patients, List<PatientHistory> histories) {
+    private Patient getPatientById(HttpServletRequest request, Integer id) {
+        String jsessionid = getCookieValue(request, "AUTH_TOKEN");
+        HttpHeaders headers = new HttpHeaders();
+        if (jsessionid != null) {
+            headers.add(HttpHeaders.COOKIE, "AUTH_TOKEN=" + jsessionid);
+        }
+        HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+        try {
+            ResponseEntity<Patient> response = restTemplate.exchange(
+                    patientUrl + "/" + id,
+                    HttpMethod.GET,
+                    entity,
+                    Patient.class
+            );
+            return response.getBody();
+        } catch (Exception e) {
+            log.error("Failed to fetch patient {}: {}", id, e.getMessage());
+            return null;
+        }
+    }
+
+    private List<Diabetes> fetchDiabetesRisks(HttpServletRequest request,
+                                              List<Patient> patients,
+                                              List<PatientHistory> histories) {
         List<Diabetes> risks = new ArrayList<>();
         Map<Integer, List<PatientHistory>> historyGroups = histories.stream()
                 .collect(Collectors.groupingBy(PatientHistory::getPatId));
 
+        String jsessionid = getCookieValue(request, "AUTH_TOKEN");
+        HttpHeaders headers = new HttpHeaders();
+        if (jsessionid != null) {
+            headers.add(HttpHeaders.COOKIE, "AUTH_TOKEN=" + jsessionid);
+        }
+        HttpEntity<Void> entity = new HttpEntity<>(headers);
+
         for (Patient patient : patients) {
             try {
+                Patient p = getPatientById(request, patient.getId());
+                if (p == null) {
+                    risks.add(new Diabetes(patient.getId(), "Patient not found"));
+                    continue;
+                }
+
                 List<PatientHistory> patientHistories = historyGroups.get(patient.getId());
                 if (patientHistories == null || patientHistories.isEmpty()) {
                     risks.add(new Diabetes(patient.getId(), "No history found"));
                     continue;
                 }
-                List<String> allNotes = patientHistories.stream()
-                        .flatMap(h -> h.getNotes().stream())
-                        .toList();
-                ResponseEntity<String> response = restTemplate.getForEntity(
-                        riskUrl + "/" + patient.getId(), String.class);
+
+                ResponseEntity<String> response = restTemplate.exchange(
+                        riskUrl + "/" + patient.getId(),
+                        HttpMethod.GET,
+                        entity,
+                        String.class
+                );
 
                 String body = response.getBody();
-                String riskLevel = body != null && body.contains(": ")
-                        ? body.substring(body.lastIndexOf(":") + 3).trim()
-                        : "Unknown";
+                log.info("Diabetes service raw response for patient {}: {}", patient.getId(), body);
+
+                String riskLevel = body != null && body.contains(":")
+                        ? body.substring(body.lastIndexOf(":") + 1).trim()
+                        : "Unavailable";
 
                 risks.add(new Diabetes(patient.getId(), riskLevel));
             } catch (Exception e) {
-                log.error("Risk service failed for patient {}:{}", patient.getId(), e.getMessage());
+                log.error("Risk service failed for patient {}: {}", patient.getId(), e.getMessage());
                 risks.add(new Diabetes(patient.getId(), "Unavailable"));
             }
         }
         return risks;
     }
 
-    private List<Patient> fetchPatients() {
+    private List<Patient> fetchPatients(HttpServletRequest request) {
         try {
-            ResponseEntity<Patient[]> response = restTemplate.getForEntity(
-                    patientUrl + "/all", Patient[].class);
+            String jsessionid = getCookieValue(request, "AUTH_TOKEN");
+            HttpHeaders headers = new HttpHeaders();
+            if (jsessionid != null) {
+                headers.add(HttpHeaders.COOKIE, "AUTH_TOKEN=" + jsessionid);
+            }
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+            ResponseEntity<Patient[]> response = restTemplate.exchange(
+                    patientUrl + "/all",
+                    HttpMethod.GET,
+                    entity,
+                    Patient[].class
+            );
             return Arrays.asList(response.getBody());
         } catch (Exception e) {
             return Collections.emptyList();
         }
     }
 
-    private List<PatientHistory> fetchNotes(List<Patient> patients) {
+    private List<PatientHistory> fetchNotes(HttpServletRequest request, List<Patient> patients) {
         try {
-            ResponseEntity<PatientHistory[]> response = restTemplate.getForEntity(
-                    "http://localhost:8085/api/history/all", PatientHistory[].class);
+            String jsessionid = getCookieValue(request, "AUTH_TOKEN");
+            HttpHeaders headers = new HttpHeaders();
+            if (jsessionid != null) {
+                headers.add(HttpHeaders.COOKIE, "AUTH_TOKEN=" + jsessionid);
+            }
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+            ResponseEntity<PatientHistory[]> response = restTemplate.exchange(
+                    historyUrl + "/all",
+                    HttpMethod.GET,
+                    entity,
+                    PatientHistory[].class
+            );
 
             Map<Integer, Patient> patientMap = patients.stream()
                     .collect(Collectors.toMap(Patient::getId, Function.identity()));
@@ -148,5 +260,13 @@ public class HomeController {
         } catch (Exception e) {
             return Collections.emptyList();
         }
+    }
+
+    private String getCookieValue(HttpServletRequest request, String name) {
+        if (request.getCookies() == null) return null;
+        for (Cookie c : request.getCookies()) {
+            if (name.equals(c.getName())) return c.getValue();
+        }
+        return null;
     }
 }

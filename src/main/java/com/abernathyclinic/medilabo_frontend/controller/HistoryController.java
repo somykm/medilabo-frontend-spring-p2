@@ -2,9 +2,13 @@ package com.abernathyclinic.medilabo_frontend.controller;
 
 import com.abernathyclinic.medilabo_frontend.model.Patient;
 import com.abernathyclinic.medilabo_frontend.model.PatientHistory;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -12,10 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -28,7 +29,7 @@ public class HistoryController {
     private RestTemplate restTemplate;
 
     private final String historyUrl = "http://localhost:8085/api/history";
-    private final String patientUrl = "http://localhost:8085/api/patient/all";
+    private final String patientUrl = "http://localhost:8085/api/patient";
 
     @GetMapping
     public String redirectToHistorySlash() {
@@ -36,17 +37,20 @@ public class HistoryController {
     }
 
     @GetMapping("/")
-    public String showHistory(Model model) {
+    public String showHistory(HttpServletRequest request, Model model) {
         log.info("Fetching history notes and patient list for UI display.");
-        List<PatientHistory> notes = fetchNotes();
-        List<Patient> patients = fetchPatients();
+
+        List<PatientHistory> notes = fetchNotes(request);
+        List<Patient> patients = fetchPatients(request);
 
         Map<Integer, Patient> patientMap = patients.stream()
                 .collect(Collectors.toMap(Patient::getId, Function.identity()));
 
-        System.out.println("Fetched notes count: " + notes.size());
         for (PatientHistory note : notes) {
-            System.out.println("Patient " + note.getPatId() + " notes: " + note.getNotes());
+            Patient patient = patientMap.get(note.getPatId());
+            if (patient != null) {
+                note.setFullName(patient.getFirstName() + " " + patient.getLastName());
+            }
         }
         model.addAttribute("notes", notes);
         model.addAttribute("note", new PatientHistory());
@@ -54,7 +58,8 @@ public class HistoryController {
     }
 
     @PostMapping("/add")
-    public String addNote(@ModelAttribute PatientHistory note,
+    public String addNote(HttpServletRequest request,
+                          @ModelAttribute PatientHistory note,
                           RedirectAttributes redirectAttributes) {
         log.info("Trying to add note for patient ID:{}", note.getPatId());
         if (note.getNotes() == null || note.getNotes().isEmpty() || note.getNotes().get(0).isBlank()) {
@@ -62,8 +67,13 @@ public class HistoryController {
             return "redirect:/ui/history/#addForm";
         }
 
-        HttpEntity<PatientHistory> entity = new HttpEntity<>(note);
+        String authToken = getCookieValue(request, "AUTH_TOKEN");
+        HttpHeaders headers = new HttpHeaders();
+        if (authToken != null) {
+            headers.add(HttpHeaders.COOKIE, "AUTH_TOKEN=" + authToken);
+        }
 
+        HttpEntity<PatientHistory> entity = new HttpEntity<>(note, headers);
         try {
             restTemplate.postForEntity(historyUrl, entity, Void.class);
             log.info("Note successfully added for patient with Id:{}", note.getPatId());
@@ -75,13 +85,15 @@ public class HistoryController {
     }
 
     @GetMapping("/add/{patId}")
-    public String showAddNoteForm(@PathVariable Integer patId, Model model) {
+    public String showAddNoteForm(HttpServletRequest request,
+                                  @PathVariable Integer patId, Model model) {
         PatientHistory note = new PatientHistory();
         note.setPatId(patId);
+
         model.addAttribute("note", note);
         log.info("Preparing add-note form for patient ID: {}", patId);
-        List<PatientHistory> notes = fetchNotes();
-        List<Patient> patients = fetchPatients();
+        List<PatientHistory> notes = fetchNotes(request);
+        List<Patient> patients = fetchPatients(request);
 
         Map<Integer, Patient> patientMap = patients.stream()
                 .collect(Collectors.toMap(Patient::getId, Function.identity()));
@@ -97,23 +109,54 @@ public class HistoryController {
         return "history";
     }
 
-    private List<PatientHistory> fetchNotes() {
+    private List<PatientHistory> fetchNotes(HttpServletRequest request) {
         try {
-            ResponseEntity<PatientHistory[]> response = restTemplate.getForEntity(
-                    historyUrl + "/all", PatientHistory[].class);
+            String jsessionid = getCookieValue(request, "AUTH_TOKEN");
+            HttpHeaders headers = new HttpHeaders();
+            if (jsessionid != null) {
+                headers.add(HttpHeaders.COOKIE, "AUTH_TOKEN=" + jsessionid);
+            }
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+            ResponseEntity<PatientHistory[]> response = restTemplate.exchange(
+                    historyUrl + "/all",
+                    HttpMethod.GET,
+                    entity,
+                    PatientHistory[].class
+            );
+
             return Arrays.asList(response.getBody());
         } catch (Exception e) {
             return Collections.emptyList();
         }
     }
 
-    private List<Patient> fetchPatients() {
+    private List<Patient> fetchPatients(HttpServletRequest request) {
         try {
-            ResponseEntity<Patient[]> response = restTemplate.getForEntity(
-                    patientUrl, Patient[].class);
+            String jsessionid = getCookieValue(request, "AUTH_TOKEN");
+            HttpHeaders headers = new HttpHeaders();
+            if (jsessionid != null) {
+                headers.add(HttpHeaders.COOKIE, "AUTH_TOKEN=" + jsessionid);
+            }
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+            ResponseEntity<Patient[]> response = restTemplate.exchange(
+                    patientUrl,
+                    HttpMethod.GET,
+                    entity,
+                    Patient[].class
+            );
             return Arrays.asList(response.getBody());
         } catch (Exception e) {
             return Collections.emptyList();
         }
+    }
+
+    private String getCookieValue(HttpServletRequest request, String name) {
+        if (request.getCookies() == null) return null;
+        for (Cookie c : request.getCookies()) {
+            if (name.equals(c.getName())) return c.getValue();
+        }
+        return null;
     }
 }
