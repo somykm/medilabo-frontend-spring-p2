@@ -28,8 +28,8 @@ public class HistoryController {
     @Autowired
     private RestTemplate restTemplate;
 
-    private final String historyUrl = "http://localhost:8085/api/history";
-    private final String patientUrl = "http://localhost:8085/api/patient";
+    private final String historyUrl = "http://medilabo-gateway:8085/api/history";
+    private final String patientUrl = "http://medilabo-gateway:8085/api/patient";
 
     @GetMapping
     public String redirectToHistorySlash() {

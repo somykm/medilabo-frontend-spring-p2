@@ -29,21 +29,19 @@ public class HomeController {
     @Autowired
     private RestTemplate restTemplate;
 
-    private final String patientUrl = "http://localhost:8085/api/patient";
-    private final String riskUrl = "http://localhost:8085/api/diabetes";
-    private final String historyUrl = "http://localhost:8085/api/history";
+    private final String patientUrl = "http://medilabo-gateway:8085/api/patient";
+    private final String riskUrl = "http://medilabo-gateway:8085/api/diabetes";
+    private final String historyUrl = "http://medilabo-gateway:8085/api/history";
+
 
     @GetMapping("/")
     public String listPatients(HttpServletRequest request, Model model) {
         log.info("Getting all the patients");
-        // Get logged-in username from SecurityContext
         String username = org.springframework.security.core.context.SecurityContextHolder.getContext()
                 .getAuthentication() != null ?
                 org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName()
                 : "anonymous";
         model.addAttribute("username", username);
-
-        // Read JSESSIONID cookie (JWT)
         String jsessionid = getCookieValue(request, "AUTH_TOKEN");
 
         HttpHeaders headers = new HttpHeaders();

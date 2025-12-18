@@ -1,13 +1,10 @@
-# Use a base image with Java 17 already installed
+FROM maven:3.9.6-eclipse-temurin-21 AS build
+WORKDIR /app
+COPY pom.xml .
+COPY src ./src
+RUN mvn clean package -DskipTests
 FROM eclipse-temurin:21-jdk-alpine
-# Expose the port your app runs on
+WORKDIR /app
 EXPOSE 8082
-# Set working directory inside the container
-WORKDIR /tmp
-
-# Copy the built JAR file into the container
-ARG JAR_FILE=target/*.jar
-COPY ${JAR_FILE} /app.jar
-
-# Run the Spring Boot application
-ENTRYPOINT ["java", "-jar", "/app.jar"]
+COPY --from=build /app/target/medilabo-frontend-*.jar app.jar
+ENTRYPOINT ["java","-jar","app.jar"]
