@@ -2,14 +2,9 @@ package com.abernathyclinic.medilabo_frontend.controller;
 
 import com.abernathyclinic.medilabo_frontend.model.Patient;
 import com.abernathyclinic.medilabo_frontend.model.PatientHistory;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -31,132 +26,132 @@ public class HistoryController {
     private final String historyUrl = "http://medilabo-gateway:8085/api/history";
     private final String patientUrl = "http://medilabo-gateway:8085/api/patient";
 
+    private HttpEntity<?> noAuth() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setAccept(List.of(MediaType.APPLICATION_JSON));
+        return new HttpEntity<>(headers);
+    }
+
+    private <T> HttpEntity<T> noAuth(T body) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setAccept(List.of(MediaType.APPLICATION_JSON));
+        return new HttpEntity<>(body, headers);
+    }
+
     @GetMapping
     public String redirectToHistorySlash() {
         return "redirect:/ui/history/";
     }
 
     @GetMapping("/")
-    public String showHistory(HttpServletRequest request, Model model) {
-        log.info("Fetching history notes and patient list for UI display.");
+    public String showHistory(Model model) {
+        log.info("Loading history page");
 
-        List<PatientHistory> notes = fetchNotes(request);
-        List<Patient> patients = fetchPatients(request);
+        List<PatientHistory> notes = fetchNotes();
+        List<Patient> patients = fetchPatients();
 
         Map<Integer, Patient> patientMap = patients.stream()
                 .collect(Collectors.toMap(Patient::getId, Function.identity()));
 
         for (PatientHistory note : notes) {
-            Patient patient = patientMap.get(note.getPatId());
-            if (patient != null) {
-                note.setFullName(patient.getFirstName() + " " + patient.getLastName());
-            }
+            Patient p = patientMap.get(note.getPatId());
+            note.setFullName(p != null ? p.getFirstName() + " " + p.getLastName() : "Unknown");
         }
+
         model.addAttribute("notes", notes);
         model.addAttribute("note", new PatientHistory());
+
         return "history";
     }
 
     @PostMapping("/add")
-    public String addNote(HttpServletRequest request,
-                          @ModelAttribute PatientHistory note,
+    public String addNote(@ModelAttribute PatientHistory note,
                           RedirectAttributes redirectAttributes) {
-        log.info("Trying to add note for patient ID:{}", note.getPatId());
+
+        log.info("Adding note for patient {}", note.getPatId());
+
         if (note.getNotes() == null || note.getNotes().isEmpty() || note.getNotes().get(0).isBlank()) {
             redirectAttributes.addFlashAttribute("error", "Note cannot be empty.");
             return "redirect:/ui/history/#addForm";
         }
 
-        String authToken = getCookieValue(request, "AUTH_TOKEN");
-        HttpHeaders headers = new HttpHeaders();
-        if (authToken != null) {
-            headers.add(HttpHeaders.COOKIE, "AUTH_TOKEN=" + authToken);
-        }
-
-        HttpEntity<PatientHistory> entity = new HttpEntity<>(note, headers);
         try {
-            restTemplate.postForEntity(historyUrl, entity, Void.class);
-            log.info("Note successfully added for patient with Id:{}", note.getPatId());
+            restTemplate.exchange(
+                    historyUrl,
+                    HttpMethod.POST,
+                    noAuth(note),
+                    Void.class
+            );
+            redirectAttributes.addFlashAttribute("success", "Note added successfully.");
         } catch (Exception e) {
-            log.error("Failed to add note for patient ID {}: {}", note.getPatId(), e.getMessage());
+            log.error("Failed to add note for {}: {}", note.getPatId(), e.getMessage());
+            redirectAttributes.addFlashAttribute("error", "Failed to add note.");
         }
 
         return "redirect:/ui/history";
     }
 
     @GetMapping("/add/{patId}")
-    public String showAddNoteForm(HttpServletRequest request,
-                                  @PathVariable Integer patId, Model model) {
+    public String showAddNoteForm(@PathVariable Integer patId,
+                                  Model model) {
+
+        log.info("Preparing add-note form for patient {}", patId);
+
         PatientHistory note = new PatientHistory();
         note.setPatId(patId);
-
         model.addAttribute("note", note);
-        log.info("Preparing add-note form for patient ID: {}", patId);
-        List<PatientHistory> notes = fetchNotes(request);
-        List<Patient> patients = fetchPatients(request);
+
+        List<PatientHistory> notes = fetchNotes();
+        List<Patient> patients = fetchPatients();
 
         Map<Integer, Patient> patientMap = patients.stream()
                 .collect(Collectors.toMap(Patient::getId, Function.identity()));
 
-        for (PatientHistory history : notes) {
-            Patient patient = patientMap.get(history.getPatId());
-            if (patient != null) {
-                history.setFullName(patient.getFirstName() + " " + patient.getLastName());
-            }
+        for (PatientHistory h : notes) {
+            Patient p = patientMap.get(h.getPatId());
+            h.setFullName(p != null ? p.getFirstName() + " " + p.getLastName() : "Unknown");
         }
 
         model.addAttribute("notes", notes);
+
         return "history";
     }
 
-    private List<PatientHistory> fetchNotes(HttpServletRequest request) {
+    private List<PatientHistory> fetchNotes() {
         try {
-            String jsessionid = getCookieValue(request, "AUTH_TOKEN");
-            HttpHeaders headers = new HttpHeaders();
-            if (jsessionid != null) {
-                headers.add(HttpHeaders.COOKIE, "AUTH_TOKEN=" + jsessionid);
-            }
-            HttpEntity<Void> entity = new HttpEntity<>(headers);
-
             ResponseEntity<PatientHistory[]> response = restTemplate.exchange(
                     historyUrl + "/all",
                     HttpMethod.GET,
-                    entity,
+                    noAuth(),
                     PatientHistory[].class
             );
 
-            return Arrays.asList(response.getBody());
+            return response.getBody() != null
+                    ? Arrays.asList(response.getBody())
+                    : Collections.emptyList();
+
         } catch (Exception e) {
+            log.error("Failed to fetch notes: {}", e.getMessage());
             return Collections.emptyList();
         }
     }
 
-    private List<Patient> fetchPatients(HttpServletRequest request) {
+    private List<Patient> fetchPatients() {
         try {
-            String jsessionid = getCookieValue(request, "AUTH_TOKEN");
-            HttpHeaders headers = new HttpHeaders();
-            if (jsessionid != null) {
-                headers.add(HttpHeaders.COOKIE, "AUTH_TOKEN=" + jsessionid);
-            }
-            HttpEntity<Void> entity = new HttpEntity<>(headers);
-
             ResponseEntity<Patient[]> response = restTemplate.exchange(
-                    patientUrl,
+                    patientUrl + "/all",
                     HttpMethod.GET,
-                    entity,
+                    noAuth(),
                     Patient[].class
             );
-            return Arrays.asList(response.getBody());
+
+            return response.getBody() != null
+                    ? Arrays.asList(response.getBody())
+                    : Collections.emptyList();
+
         } catch (Exception e) {
+            log.error("Failed to fetch patients: {}", e.getMessage());
             return Collections.emptyList();
         }
-    }
-
-    private String getCookieValue(HttpServletRequest request, String name) {
-        if (request.getCookies() == null) return null;
-        for (Cookie c : request.getCookies()) {
-            if (name.equals(c.getName())) return c.getValue();
-        }
-        return null;
     }
 }

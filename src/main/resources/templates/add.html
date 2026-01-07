@@ -6,10 +6,8 @@
     <link rel="stylesheet" th:href="@{/styles.css}"/>
 </head>
 <body>
-<h2>Welcome, [[${username}]]!</h2>
-<p>Backend 8081 says: [[${backendA}]]</p>
-
-<p><a href="http://localhost:8085/logout">Logout (via Gateway)</a></p>
+<p><a th:href="@{/logout}">Logout</a>
+</p>
 <h1>Add New Patient</h1>
 <form th:action="@{/ui/add}" method="post" th:object="${patient}">
     <div class="form-group row">
@@ -96,7 +94,6 @@
     </tr>
     </tbody>
 </table>
-
 <a th:href="@{'/ui/history/'}">Add Note</a>
 <a th:href="@{/}" class="btn btn-primary mt-3">Back to Homepage!</a>
 </body>

@@ -34,10 +34,10 @@
 </table>
 <h3>Add Observation</h3>
 <form th:action="@{/ui/history/add}" method="post" th:object="${note}" id="addNote">
-    <lable for="patId">Patient ID:</lable>
+    <label for="patId">Patient ID:</label>
     <input type="number" th:field="*{patId}" id="patId" required/>
 
-    <lable for="noteText">Observation:</lable>
+    <label for="noteText">Observation:</label>
     <textarea th:field="*{notes[0]}" id="noteText" placeholder="Enter observation note" required></textarea>
     <button type="submit">Add Note</button>
 </form>

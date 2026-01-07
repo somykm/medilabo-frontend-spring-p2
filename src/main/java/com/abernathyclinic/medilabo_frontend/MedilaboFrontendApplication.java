@@ -8,11 +8,12 @@ import org.springframework.web.client.RestTemplate;
 @SpringBootApplication
 public class MedilaboFrontendApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(MedilaboFrontendApplication.class, args);
-	}
-	@Bean
-	public RestTemplate restTemplate() {
-		return new RestTemplate();
-	}
+    public static void main(String[] args) {
+        SpringApplication.run(MedilaboFrontendApplication.class, args);
+    }
+
+    @Bean
+    public RestTemplate restTemplate() {
+        return new RestTemplate();
+    }
 }
