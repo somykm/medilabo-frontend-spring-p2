@@ -2,6 +2,7 @@ package com.abernathyclinic.medilabo_frontend.controller;
 
 import com.abernathyclinic.medilabo_frontend.model.Patient;
 import com.abernathyclinic.medilabo_frontend.model.PatientHistory;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -17,18 +18,17 @@ import java.util.stream.Collectors;
 @Slf4j
 @Controller
 @RequestMapping("/ui/history")
+
 public class HistoryController {
 
     @Autowired
     private RestTemplate restTemplate;
-    //    private final String historyUrl = "http://medilabo-gateway:8085/api/history";
-//    private final String patientUrl = "http://medilabo-gateway:8085/api/patient";
-    private final String historyUrl = "http://localhost:8085/api/history";
-    private final String patientUrl = "http://localhost:8085/api/patient";
+    private final String historyUrl = "http://medilabo-gateway:8085/api/history";
+    private final String patientUrl = "http://medilabo-gateway:8085/api/patient";
 
     @GetMapping
     public String redirectToHistorySlash() {
-        return "redirect:http://localhost:8085/ui/history/";
+        return "redirect:/ui/history/";
     }
 
     @GetMapping("/")
@@ -57,7 +57,7 @@ public class HistoryController {
         log.info("Adding note for patient {}", note.getPatId());
         if (note.getNotes() == null || note.getNotes().isEmpty() || note.getNotes().get(0).isBlank()) {
             redirectAttributes.addFlashAttribute("error", "Note cannot be empty.");
-            return "redirect:http://localhost:8085/ui/history//#addForm";
+            return "redirect:/ui/history/#addForm";
         }
         try {
             restTemplate.postForObject(historyUrl, note, Void.class);
@@ -66,7 +66,7 @@ public class HistoryController {
             log.error("Failed to add note for {}: {}", note.getPatId(), e.getMessage());
             redirectAttributes.addFlashAttribute("error", "Failed to add note.");
         }
-        return "redirect:http://localhost:8085/ui/history";
+        return "redirect:/ui/history";
     }
 
     @GetMapping("/add/{patId}")

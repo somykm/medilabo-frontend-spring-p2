@@ -21,18 +21,13 @@ public class HomeController {
 
     @Autowired
     private RestTemplate restTemplate;
-    //    private final String patientUrl = "http://medilabo-gateway:8085/api/patient";
-//    private final String riskUrl = "http://medilabo-gateway:8085/api/diabetes";
-//    private final String historyUrl = "http://medilabo-gateway:8085/api/history";
-
-
-    private final String patientUrl = "http://localhost:8085/api/patient";
-    private final String riskUrl = "http://localhost:8085/api/diabetes";
-    private final String historyUrl = "http://localhost:8085/api/history";
+    private final String patientUrl = "http://medilabo-gateway:8085/api/patient";
+    private final String riskUrl = "http://medilabo-gateway:8085/api/diabetes";
+    private final String historyUrl = "http://medilabo-gateway:8085/api/history";
 
     @GetMapping("/")
     public String home() {
-        return "redirect:/ui/";
+        return "redirect:/ui/add";
     }
 
     @GetMapping("/add")
@@ -60,7 +55,7 @@ public class HomeController {
         } catch (Exception e) {
             log.error("Failed to add patient: {}", e.getMessage());
         }
-        return "redirect:http://localhost:8085/ui/add";
+        return "redirect:/ui/add";
     }
 
     @GetMapping("/edit/{id}")
@@ -88,7 +83,7 @@ public class HomeController {
             log.error("Failed to update patient {}: {}", id, e.getMessage());
         }
 
-        return "redirect:http://localhost:8085/ui/add";
+        return "redirect:/ui/add/";
     }
 
     private List<Patient> fetchPatients() {
