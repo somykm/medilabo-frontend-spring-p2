@@ -1,9 +1,14 @@
 package com.abernathyclinic.medilabo_frontend;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+
+import java.util.List;
 
 @SpringBootApplication
 public class MedilaboFrontendApplication {
@@ -14,6 +19,26 @@ public class MedilaboFrontendApplication {
 
     @Bean
     public RestTemplate restTemplate() {
-        return new RestTemplate();
+        RestTemplate restTemplate = new RestTemplate();
+
+        restTemplate.setInterceptors(List.of((request, body, execution) -> {
+            ServletRequestAttributes attrs =
+                    (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+
+            if (attrs != null) {
+                HttpServletRequest servletRequest = attrs.getRequest();
+                String cookie = servletRequest.getHeader("Cookie");
+
+                if (cookie != null) {
+                    request.getHeaders().add("Cookie", cookie);
+                }
+            }
+
+            return execution.execute(request, body);
+        }));
+
+        return restTemplate;
     }
+
+
 }

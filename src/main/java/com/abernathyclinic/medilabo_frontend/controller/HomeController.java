@@ -14,194 +14,6 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-//@RequestMapping("/ui")
-//public class HomeController {
-//
-//    @Autowired
-//    private RestTemplate restTemplate;
-//
-//    private final String patientUrl = "http://medilabo-gateway:8085/api/patient";
-//    private final String riskUrl = "http://medilabo-gateway:8085/api/diabetes";
-//    private final String historyUrl = "http://medilabo-gateway:8085/api/history";
-//
-//    @GetMapping("/store-token")
-//    public String storeToken() {
-//        return "redirect:http://localhost:8085/ui/add";
-//    }
-//    private HttpEntity<?> noAuth() {
-//        HttpHeaders headers = new HttpHeaders();
-//        headers.setAccept(List.of(MediaType.APPLICATION_JSON));
-//        return new HttpEntity<>(headers);
-//    }
-//
-//    private <T> HttpEntity<T> noAuth(T body) {
-//        HttpHeaders headers = new HttpHeaders();
-//        headers.setAccept(List.of(MediaType.APPLICATION_JSON));
-//        return new HttpEntity<>(body, headers);
-//    }
-//
-//    @GetMapping("/")
-//    public String home() {
-//        return "redirect:/ui/add";
-//    }
-//
-//    @GetMapping("/add")
-//    public String showAddForm(Model model) {
-//
-//        model.addAttribute("patient", new Patient());
-//
-//        List<Patient> patients = fetchPatients();
-//        model.addAttribute("patients", patients);
-//
-//        List<PatientHistory> notes = fetchNotes(patients);
-//        model.addAttribute("notes", notes);
-//
-//        List<Diabetes> risks = fetchDiabetesRisks(patients, notes);
-//        model.addAttribute("risks", risks);
-//
-//        return "add";
-//    }
-//
-//    @PostMapping("/add")
-//    public String addPatient(@ModelAttribute Patient patient) {
-//        try {
-//            restTemplate.exchange(
-//                    patientUrl,
-//                    HttpMethod.POST,
-//                    noAuth(patient),
-//                    Patient.class
-//            );
-//            log.info("Patient added successfully");
-//        } catch (Exception e) {
-//            log.error("Failed to add patient: {}", e.getMessage());
-//        }
-//        return "redirect:/ui/add";
-//    }
-//
-//    @GetMapping("/edit/{id}")
-//    public String showEditForm(@PathVariable Integer id, Model model) {
-//        try {
-//            ResponseEntity<Patient> response = restTemplate.exchange(
-//                    patientUrl + "/" + id,
-//                    HttpMethod.GET,
-//                    noAuth(),
-//                    Patient.class
-//            );
-//            model.addAttribute("patient", response.getBody());
-//        } catch (Exception e) {
-//            log.error("Failed to load patient {}: {}", id, e.getMessage());
-//        }
-//        return "edit";
-//    }
-//
-//    @PostMapping("/update/{id}")
-//    public String updatePatient(@PathVariable Integer id,
-//                                @ModelAttribute Patient patient) {
-//
-//        try {
-//            restTemplate.exchange(
-//                    patientUrl + "/" + id,
-//                    HttpMethod.PUT,
-//                    noAuth(patient),
-//                    Void.class
-//            );
-//            log.info("Patient {} updated", id);
-//        } catch (Exception e) {
-//            log.error("Failed to update patient {}: {}", id, e.getMessage());
-//        }
-//
-//        return "redirect:/ui/add";
-//    }
-//
-//    private List<Patient> fetchPatients() {
-//        try {
-//            ResponseEntity<Patient[]> response = restTemplate.exchange(
-//                    patientUrl + "/all",
-//                    HttpMethod.GET,
-//                    noAuth(),
-//                    Patient[].class
-//            );
-//
-//            return response.getBody() != null
-//                    ? Arrays.asList(response.getBody())
-//                    : Collections.emptyList();
-//
-//        } catch (Exception e) {
-//            log.error("Failed to fetch patients: {}", e.getMessage());
-//            return Collections.emptyList();
-//        }
-//    }
-//
-//    private List<PatientHistory> fetchNotes(List<Patient> patients) {
-//        try {
-//            ResponseEntity<PatientHistory[]> response = restTemplate.exchange(
-//                    historyUrl + "/all",
-//                    HttpMethod.GET,
-//                    noAuth(),
-//                    PatientHistory[].class
-//            );
-//
-//            List<PatientHistory> notes = response.getBody() != null
-//                    ? Arrays.asList(response.getBody())
-//                    : Collections.emptyList();
-//
-//            Map<Integer, Patient> patientMap = patients.stream()
-//                    .collect(Collectors.toMap(Patient::getId, Function.identity()));
-//
-//            for (PatientHistory note : notes) {
-//                Patient p = patientMap.get(note.getPatId());
-//                note.setFullName(p != null ? p.getFirstName() + " " + p.getLastName() : "Unknown");
-//            }
-//
-//            return notes;
-//
-//        } catch (Exception e) {
-//            log.error("Failed to fetch notes: {}", e.getMessage());
-//            return Collections.emptyList();
-//        }
-//    }
-//
-//    private List<Diabetes> fetchDiabetesRisks(List<Patient> patients,
-//                                              List<PatientHistory> histories) {
-//
-//        List<Diabetes> risks = new ArrayList<>();
-//
-//        Map<Integer, List<PatientHistory>> historyGroups =
-//                histories.stream().collect(Collectors.groupingBy(PatientHistory::getPatId));
-//
-//        for (Patient patient : patients) {
-//            try {
-//                List<PatientHistory> patientHistories = historyGroups.get(patient.getId());
-//
-//                if (patientHistories == null || patientHistories.isEmpty()) {
-//                    risks.add(new Diabetes(patient.getId(), "No history found"));
-//                    continue;
-//                }
-//
-//                ResponseEntity<String> response = restTemplate.exchange(
-//                        riskUrl + "/" + patient.getId(),
-//                        HttpMethod.GET,
-//                        noAuth(),
-//                        String.class
-//                );
-//
-//                String body = response.getBody();
-//                String riskLevel = (body != null && body.contains(":"))
-//                        ? body.substring(body.lastIndexOf(":") + 1).trim()
-//                        : "Unavailable";
-//
-//                risks.add(new Diabetes(patient.getId(), riskLevel));
-//
-//            } catch (Exception e) {
-//                log.error("Failed to fetch diabetes risk for {}: {}", patient.getId(), e.getMessage());
-//                risks.add(new Diabetes(patient.getId(), "Unavailable"));
-//            }
-//        }
-//
-//        return risks;
-//    }
-//}
-
 @Slf4j
 @Controller
 @RequestMapping("/ui")
@@ -209,6 +21,10 @@ public class HomeController {
 
     @Autowired
     private RestTemplate restTemplate;
+    //    private final String patientUrl = "http://medilabo-gateway:8085/api/patient";
+//    private final String riskUrl = "http://medilabo-gateway:8085/api/diabetes";
+//    private final String historyUrl = "http://medilabo-gateway:8085/api/history";
+
 
     private final String patientUrl = "http://localhost:8085/api/patient";
     private final String riskUrl = "http://localhost:8085/api/diabetes";
@@ -244,7 +60,7 @@ public class HomeController {
         } catch (Exception e) {
             log.error("Failed to add patient: {}", e.getMessage());
         }
-        return "redirect:/ui/add";
+        return "redirect:http://localhost:8085/ui/add";
     }
 
     @GetMapping("/edit/{id}")
@@ -272,7 +88,7 @@ public class HomeController {
             log.error("Failed to update patient {}: {}", id, e.getMessage());
         }
 
-        return "redirect:/ui/add";
+        return "redirect:http://localhost:8085/ui/add";
     }
 
     private List<Patient> fetchPatients() {
